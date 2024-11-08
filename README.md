@@ -1,13 +1,12 @@
 # Ansible Playbook to setup YugabyteDB Cluster
 
-
 ## Prerequisites
 
 * Ansible
 * Python 3
 * 3 or more servers with Ubuntu
 
-## Run Plabook
+## Run Playbook
 
 1. Clone the repository:
    ```bash
