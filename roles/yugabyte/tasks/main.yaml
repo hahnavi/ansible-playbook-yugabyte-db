@@ -1,0 +1,84 @@
+---
+- name: Create yugabyte user
+  ansible.builtin.user:
+    name: yugabyte
+    shell: /bin/false
+    create_home: true
+    home: /opt/yugabyte
+- name: Install chrony
+  ansible.builtin.apt:
+    name: chrony
+    state: present
+    update_cache: true
+- name: Configure resource limits
+  ansible.builtin.blockinfile:
+    block: "{{ lookup('file', 'files/limits.conf') }}"
+    path: /etc/security/limits.conf
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+- name: Configure nproc limit
+  ansible.builtin.copy:
+    src: files/limits_20-nproc.conf
+    dest: /etc/security/limits.d/20-nproc.conf
+    mode: '0644'
+- name: Configure sysctl vm.swappiness
+  ansible.posix.sysctl:
+    name: vm.swappiness
+    value: '0'
+    state: present
+- name: Configure sysctl vm.max_map_count
+  ansible.posix.sysctl:
+    name: vm.max_map_count
+    value: '262144'
+    state: present
+- name: Configure sysctl kernel.core_pattern
+  ansible.posix.sysctl:
+    name: kernel.core_pattern
+    value: /opt/yugabyte/cores/core_%p_%t_%E
+    state: present
+- name: Check if yugabyte dir exists
+  ansible.builtin.stat:
+    path: /opt/yugabyte/yugabyte-{{ yugabyte_version }}
+  register: yugabyte_dir_status
+- name: Download yugabyte
+  ansible.builtin.include_tasks:
+    file: download-yugabyte.yaml
+  when: not yugabyte_dir_status.stat.exists
+- name: Run postinstall
+  ansible.builtin.command:
+    cmd: /opt/yugabyte/yugabyte-{{ yugabyte_version }}/bin/post_install.sh
+  changed_when: false
+- name: Create /data directory
+  ansible.builtin.file:
+    path: /data
+    state: directory
+    owner: yugabyte
+    group: yugabyte
+    mode: '0755'
+- name: Create yugabyte-master service
+  ansible.builtin.template:
+    src: templates/yugabyte-master.service.j2
+    dest: /etc/systemd/system/yugabyte-master.service
+    mode: '0644'
+- name: Enable yugabyte-master service
+  ansible.builtin.systemd:
+    name: yugabyte-master
+    enabled: true
+    daemon_reload: true
+- name: Restart yugabyte-master service
+  ansible.builtin.systemd:
+    name: yugabyte-master
+    state: restarted
+- name: Create yugabyte-tserver service
+  ansible.builtin.template:
+    src: templates/yugabyte-tserver.service.j2
+    dest: /etc/systemd/system/yugabyte-tserver.service
+    mode: '0644'
+- name: Enable yugabyte-tserver service
+  ansible.builtin.systemd:
+    name: yugabyte-tserver
+    enabled: true
+    daemon_reload: true
+- name: Restart yugabyte-tserver service
+  ansible.builtin.systemd:
+    name: yugabyte-tserver
+    state: restarted

@@ -1,0 +1,15 @@
+[Unit]
+Description=YugaByteDB Master Service
+After=network.target
+
+[Service]
+User=yugabyte
+Group=yugabyte
+ExecStart=/opt/yugabyte/yugabyte-{{ yugabyte_version }}/bin/yb-master \
+    --master_addresses {{ groups['yugabyte'] | map('extract', hostvars, 'ansible_host') | join(':7100,') }}:7100 \
+    --rpc_bind_addresses {{ ansible_host }}:7100 \
+    --fs_data_dirs /data
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

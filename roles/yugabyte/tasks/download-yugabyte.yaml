@@ -1,0 +1,20 @@
+---
+- name: Download yugabyte
+  ansible.builtin.get_url:
+    url: https://downloads.yugabyte.com/releases/{{ yugabyte_version }}/yugabyte-{{ yugabyte_build }}-linux-x86_64.tar.gz
+    dest: /opt/yugabyte
+    owner: yugabyte
+    group: yugabyte
+    mode: '0644'
+- name: Extract yugabyte
+  ansible.builtin.unarchive:
+    src: /opt/yugabyte/yugabyte-{{ yugabyte_build }}-linux-x86_64.tar.gz
+    dest: /opt/yugabyte
+    remote_src: true
+    owner: yugabyte
+    group: yugabyte
+    mode: '0755'
+- name: Remove yugabyte archive
+  ansible.builtin.file:
+    path: /opt/yugabyte/yugabyte-{{ yugabyte_build }}-linux-x86_64.tar.gz
+    state: absent

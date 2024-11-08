@@ -1,0 +1,10 @@
+---
+- name: Install yugabyte-db
+  hosts: yugabyte
+  become: true
+  vars_files:
+    - vars.yaml
+  tasks:
+    - name: Install yugabyte
+      ansible.builtin.import_role:
+        name: yugabyte
